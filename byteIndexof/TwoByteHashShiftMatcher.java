@@ -73,12 +73,22 @@ public class TwoByteHashShiftMatcher extends MatcherFactory
     {
       int[] shifts = new int[256 << p2];
 
-      Arrays.fill(shifts, pattern.length - 1);  // Fill hash table with the maximum allowed shift for all entries
+      Arrays.fill(shifts, pattern.length);  // Fill hash table with the maximum allowed shift for all entries
 
       // Overwrite entries part of the pattern with lower shift values:
       for(int j = pattern.length - 2; j >= 0; j--) {
         int shift = pattern.length - 2 - j;
         int hash = ((pattern[j] & 0xff) << p2) ^ (pattern[j + 1] & 0xff);
+
+        if(shifts[hash] > shift) {  // Because there can be collisions in the hash, take the most conservative shift value
+          shifts[hash] = shift;
+        }
+      }
+      
+      // Overwrite all pairs which end with the first character of our pattern with a shift value of pattern.length - 1:
+      for(int i = -128; i < 128; i++) {
+        int shift = pattern.length - 1;
+        int hash = ((i & 0xff) << p2) ^ (pattern[0] & 0xff);
 
         if(shifts[hash] > shift) {  // Because there can be collisions in the hash, take the most conservative shift value
           shifts[hash] = shift;
